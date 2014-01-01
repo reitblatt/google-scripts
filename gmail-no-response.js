@@ -1,10 +1,8 @@
 /*
  * This script goes through your Gmail Inbox and finds recent emails where you
- * were the last respondent. It applies a nice label to them, so you can
- * see them in Priority Inbox or do something else.
+ * were the last respondent. 
  *
- * To remove and ignore an email thread, just remove the unrespondedLabel and
- * apply the ignoreLabel.
+ * To be reminded of an email, just add a label "Wait X days" or "Wait X weeks", * where X is how long you want to wait for a reply.
  *
  * This is most effective when paired with a time-based script trigger.
  *
