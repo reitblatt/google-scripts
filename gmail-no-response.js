@@ -12,11 +12,58 @@
  * Based (strongly) on original script by Jonathan Kim (jonathan-kim.com)
  */
 
+
 "use strict";
 
 var unrespondedLabel = 'No Response';
 var dayRegex = new RegExp("Wait [0-9]+ day[s]?", "i");
 var weekRegex = new RegExp("Wait [0-9]+ week[s]?", "i");
+var waitRegex = new RegExp("Wait [0-9]+ (week|day)[s]?", "i");
+var waitingTopLabel = 'Waiting';
+var waitingLabelProto = waitingTopLabel + '/Wait X Ys';
+
+
+function setup() {
+    getLabel(waitingTopLabel);
+    getLabel(unrespondedLabel);
+}
+
+/* 
+ * Assumes script is run at least every 2 days, to reduce the number of
+ * sent messages to wade through
+ */
+function processSentMessages() {
+    var threads = GmailApp.search('is:sent from:me -in:chats newer_than:2d -in:' + waitingTopLabel);
+
+    for (var i = 0; i < threads.length; i++) {
+        var thread = threads[i],
+            messages = thread.getMessages(),
+            lastMessage = messages[messages.length - 1],
+            lastFrom = lastMessage.getFrom(),
+            waitingMatch = isToWaiting(lastMessage);
+
+        if (isFromMe(lastFrom) && waitingMatch) {
+            Logger.log("Found unlabeled waiting msg");
+            var waitingLabels = getWaitingLabels(waitingMatch);
+            for (var j = 0; j < waitingLabels.length; j++) {
+                waitingLabels[j].addToThread(thread);
+            }
+        }
+    }
+}
+
+/* 
+ * Takes a string array returned from isToWaiting(): first item is
+ * full address, second item is number, third is the unit of time 
+ */
+
+function getWaitingLabels(addressArr) {
+    var num = addressArr[1],
+        unit = addressArr[2],
+        labelName = waitingLabelProto.replace("X", num).replace("Y", unit);
+
+    return [getLabel(labelName), getLabel(waitingTopLabel)];
+}
 
 function updateOldThreads(days, label) {
     var threads = GmailApp.search('is:sent from:me -in:chats older_than:' + days + 'd' + ' in:' + label.getName()),
@@ -75,6 +122,32 @@ function processUnresponded() {
             updateOldThreads(days, label);
         }
     }
+}
+
+function isToWaiting(msg) {
+    var toAddresses = (msg.getTo() + "," + msg.getCc() + "," + msg.getBcc()).split(","),
+        addresses = getEmailAddresses(),
+        match = undefined;
+    
+    for (var i = 0; i < addresses.length; i++) {
+        var address = addresses[i].split("@");
+        Logger.log("Processing address " + address[0] + " " + address[1]);
+        addresses[i] = new RegExp(address[0] + 
+                                  "\\+([0-9]+)(d|w|wk|day|week)[s]?" + "@" +
+                                  address[1],"i");
+    }
+    for (var j = 0; j < toAddresses.length; j++) {
+        Logger.log("Checking address " + toAddresses[j] + " for waiting tag");
+        for( var k = 0; k < addresses.length; k++) {
+          Logger.log("Comparing against regex " + addresses[k].toString());
+            match = addresses[k].exec(toAddresses[j]);
+            if (match) { 
+                Logger.log("Found match on waiting email " + match[0]);
+                return match; }
+        }
+    }
+    Logger.log("Did not find waiting email address");
+    return false;
 }
 
 function isFromMe(fromAddress) {
