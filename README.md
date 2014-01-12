@@ -10,4 +10,4 @@ Then, get the [Gmail - No Response script](https://github.com/reitblatt/google-s
 
 Next, click the clock icon to create a trigger that will run this script on a schedule. ```main``` and ```processSentMessages``` should both run at least daily. I set mine up to run daily at midnight.
 
-H/t to [Jonathan Kim](jonathan-kim.com) for the original script.
+H/t to [Jonathan Kim](http://jonathan-kim.com) for the original script.
